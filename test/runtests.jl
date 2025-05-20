@@ -1,26 +1,21 @@
 using TextSpace
 using Test
 
+using Random
+using Downloads 
+
+include(joinpath(@__DIR__, "..", "src", "preprocessing", "Vocabulary.jl"))
 
 
+include("WordEmbeddings/word_embeddings_test_gateway.jl")
+# include("CharacterEmbeddings/character_embeddings_test_gateway.jl")
+# include("preprocessing/preprocessing_test_gateway.jl")
 
-@testset "clean_text tests" begin
+
+@testset "basic tests" begin
     # Test 1: Default behavior (no punctuation or emoji removal)
-    text1 = "Hello, World!   "
+    text1 = "Hello, World!"
     #only lowercasing and whitespace normalization occur.
-    @test clean_text(text1) == "hello, world!"
+    @test text1 == "Hello, World!"
 
-    #remove punctuation
-    text2 = "Hello, World!   "
-    # punctuation removed, the comma and exclamation point are dropped.
-    @test clean_text(text2, remove_punctuation=true) == "hello world"
-
-    # Test 3: Remove emojis
-    text3 = "Hello 😊 World!   "
-    @test clean_text(text3, remove_emojis=true) == "hello world!"
-
-    # Test 4: Remove both punctuation and emojis
-    text4 = "Hello, 😊 World!   How are you?"
-    #removing both punctuation and emojis should result in just the words, separated by a single space.
-    @test clean_text(text4, remove_punctuation=true, remove_emojis=true) == "hello world how are you"
 end

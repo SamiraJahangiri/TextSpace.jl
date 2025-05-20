@@ -24,9 +24,7 @@ function measure(w::String)
     return m 
 end
 
-function endswith(w::String, suffix::String) 
-    return length(w) >= length(suffix) && w[end-length(suffix)+1:end] == suffix 
-end
+
 
 function replace_suffix(w::String, suffix::String, repl::String) 
     return w[1:end-length(suffix)] * repl 
@@ -51,6 +49,11 @@ function step1(w::String)
     elseif endswith(w, "ing") && has_vowel(w[1:end-3])
         w = w[1:end-3]
         w = step1b_helper(w)
+    end
+
+    # Step 1c: y with ible
+    if endswith(w, "y") && has_vowel(w[1:end-1])
+        w = replace_suffix(w, "y", "i")
     end
 
     return w
@@ -150,7 +153,7 @@ function step5(w::String)
 end
 
 
-function porter_stem(word::String)
+function porter_stem(word::AbstractString)
     w = lowercase(word)
 
     w = step1(w)

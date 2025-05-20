@@ -1,9 +1,9 @@
-
+# TODO: Special Entity Removal
 
 function remove_punctuation(
     text::String; 
     remove_symbols::Bool=false, 
-    extra_symbols::Vector{Char}=[]
+    extra_symbols::Vector{Char}=Char[]
 )
     if remove_symbols #remove punctuation + symbols, then any additional user-specified chars
         text = replace(text, r"[\p{P}\p{S}]" => "")
@@ -50,44 +50,41 @@ function remove_accents(text::String)
 end
 
 
+
 function clean_text(
     text::String;
-    unicode_normalize::Bool=true,
-    remove_accents::Bool=false,
-    remove_punctuation::Bool=false,
-    remove_symbols::Bool=false,
-    remove_emojis::Bool=false,
-    extra_symbols::Vector{Char}=[]
+    unicode_normalize::Bool     = true,
+    do_remove_accents::Bool     = false,
+    do_remove_punctuation::Bool = false,
+    do_remove_symbols::Bool     = false,
+    do_remove_emojis::Bool      = false,
+    case_transform::Symbol      = :lower,
+    extra_symbols::Vector{Char} = Char[]
 )
-    #Unicode normalization (NFC) to standardize form
-    if unicode_normalize
-        text = normalize_unicode(text)
+    # 1. NFC normalisation
+    unicode_normalize && (text = normalize_unicode(text))
+
+    # 2. accents / diacritics
+    do_remove_accents && (text = remove_accents(text))
+
+    # 3. case transform
+    case_transform === :lower ? (text = lowercase(text)) :
+    case_transform === :upper ? (text = uppercase(text)) : nothing
+
+    # 4. punctuation / symbols
+    if do_remove_punctuation || do_remove_symbols || !isempty(extra_symbols)
+        text = remove_punctuation(text;
+                                  remove_symbols = do_remove_symbols,
+                                  extra_symbols  = extra_symbols)
     end
 
-    #remove accents/diacritics
-    if remove_accents
-        text = remove_accents(text)
-    end
+    # 5. emojis
+    do_remove_emojis && (text = remove_emojis(text))
 
-    #convert to lowercase (often done early, but after unicode normalize is safe)
-    text = lowercase(text)
-
-    #remove punctuation (and possibly symbols)
-    if remove_punctuation || remove_symbols || !isempty(extra_symbols)
-        text = remove_punctuation(
-            text;
-            remove_symbols=remove_symbols,
-            extra_symbols=extra_symbols
-        )
-    end
-
-    #remove emojis
-    if remove_emojis
-        text = remove_emojis(text)
-    end
-
-    #normalize whitespace (collapse multiple spaces, strip ends)
+    # 6. whitespace tidy-up
     text = normalize_whitespace(text)
 
     return text
 end
+
+

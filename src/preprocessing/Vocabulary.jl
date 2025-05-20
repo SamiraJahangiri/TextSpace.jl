@@ -2,11 +2,23 @@
 
 using JSON
 
+
+struct Vocabulary
+    token2id::Dict{String,Int}
+    id2token::Vector{String}
+    counts::Dict{Int,Int}
+    unk_id::Int
+end
+
+Vocabulary() = Vocabulary(Dict{String,Int}(), String[], Dict{Int,Int}(), 0)
+
+
+
 function build_vocabulary(
     tokens::Vector{String};
     min_freq::Int=0,
     max_vocab_size::Int=typemax(Int),
-    special_tokens::Vector{String}=[]
+    special_tokens::Vector{String} = String[]
 )
     #count frequencies
     freq = Dict{String, Int}()
@@ -36,10 +48,13 @@ function build_vocabulary(
     token_to_index = Dict{String, Int}()
     index_to_token = String[]
 
-    #insert special tokens first
+    
+    # insert special tokens first, but only once each
     for st in special_tokens
-        push!(index_to_token, st)
-        token_to_index[st] = length(index_to_token)
+        if !haskey(token_to_index, st)          # ← new guard
+            push!(index_to_token, st)
+            token_to_index[st] = length(index_to_token)
+        end
     end
 
     #insert remaining tokens, skipping duplicates
@@ -62,7 +77,7 @@ end
 function build_vocabulary_bpe(
     corpus::Vector{String};
     vocab_size::Int=30000,
-    special_tokens::Vector{String}=[]
+    special_tokens::Vector{String}=String[]
 )
     #convert each sentence into a list of "words", each word is "chars plus a special end symbol" or keep it simpler: each word => char-level tokens
     tokenized_sentences = [split(s) for s in corpus]
@@ -213,7 +228,7 @@ end
 function build_vocabulary_wordpiece(
     corpus::Vector{String};
     vocab_size::Int=30000,
-    special_tokens::Vector{String}=[]
+    special_tokens::Vector{String}=String[]
 )
     #start with a minimal set of tokens: the special tokens + [UNK], if not present
     base_tokens = union(special_tokens, ["[UNK]"])
@@ -305,6 +320,80 @@ function build_vocabulary_wordpiece(
     )
 end
 
+
+"""
+    convert_tokens_to_ids(tokens, vocab;
+                          add_new=false,
+                          update_counts=true) → Vector{Int}
+
+Map string tokens to integer ids using `vocab::Vocabulary`.
+
+* If `add_new=true` unknown tokens are appended to the vocabulary
+  (needed while **training** the vocab).
+* If `update_counts=true` increments `vocab.counts[id]` for every hit.
+"""
+function convert_tokens_to_ids(tokens::Vector{String},
+                               vocab::Vocabulary;
+                               add_new::Bool      = false,
+                               update_counts::Bool = true)
+
+    out = Vector{Int}(undef, length(tokens))
+    for (i, tok) in enumerate(tokens)
+
+        id = get(vocab.token2id, tok, 0)        # 0 means OOV for now
+
+        if id == 0
+            if add_new
+                id = length(vocab.id2token) + 1
+                vocab.token2id[tok] = id
+                push!(vocab.id2token, tok)
+                update_counts && (vocab.counts[id] = 1)
+            else
+                id = vocab.unk_id
+                update_counts && (vocab.counts[id] = get(vocab.counts, id, 0) + 1)
+            end
+        else
+            update_counts && (vocab.counts[id] = get(vocab.counts, id, 0) + 1)
+        end
+
+        out[i] = id
+    end
+    return out
+end
+
+
+"""
+    convert_ids_to_tokens(ids, vocab) → Vector{String}
+
+Inverse mapping. Unknown ids return `"<unk>"` by convention.
+"""
+function convert_ids_to_tokens(ids::Vector{<:Integer}, vocab::Vocabulary)
+    unk = "<unk>"
+    toks = Vector{String}(undef, length(ids))
+    for (i, id) in enumerate(ids)
+        toks[i] = 1 ≤ id ≤ length(vocab.id2token) ? vocab.id2token[id] : unk
+    end
+    return toks
+end
+
+
+"""
+    convert_batch_tokens_to_ids(docs, vocab;
+                                pad_value = vocab.unk_id,
+                                kwargs...) → Matrix{Int}
+
+High-level helper: calls `convert_tokens_to_ids` on each document and
+pads to a column-major matrix via `pad_sequences` (from TextVectorization.jl).
+`docs` is a `Vector{Vector{String}}`.
+"""
+function convert_batch_tokens_to_ids(docs::Vector{Vector{String}},
+                                     vocab::Vocabulary;
+                                     pad_value::Int = vocab.unk_id,
+                                     kwargs...)
+
+    seqs = [convert_tokens_to_ids(d, vocab; kwargs...) for d in docs]
+    pad_sequences(seqs; pad_value)
+end
 
 
 function save_vocabulary(vocab::Dict, filename::String)
