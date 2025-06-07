@@ -1,4 +1,8 @@
-include(joinpath(@__DIR__, "..", "..", "src", "preprocessing", "TextNormalization.jl"))
+using Test
+using Unicode
+using TextSpace.Preprocessing:
+    normalize_unicode,
+    normalize_whitespace
 
 
 @testset "normalize_unicode" begin
