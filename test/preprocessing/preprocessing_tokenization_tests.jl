@@ -1,4 +1,10 @@
-
+using Test
+using TextSpace.Preprocessing:
+    basic_tokenize,
+    strip_punctuation,
+    ngrams,
+    tokenize,
+    tokenize_batch
 
 @testset "basic_tokenize" begin
     txt = "Hello,  World!\n"
