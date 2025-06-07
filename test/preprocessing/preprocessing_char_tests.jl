@@ -1,4 +1,6 @@
-include(joinpath(@__DIR__, "..", "..", "src", "preprocessing", "CharProcessing.jl"))
+using Test
+using Unicode
+using TextSpace.Preprocessing: tokenize_char, char_tokens
 
 
 @testset "tokenize_char" begin
