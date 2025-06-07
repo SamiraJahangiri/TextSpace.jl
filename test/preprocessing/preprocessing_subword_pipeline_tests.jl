@@ -1,4 +1,6 @@
-# include(joinpath(@__DIR__, "..", "..", "src", "preprocessing", "Preprocessing.jl"))
+using Test
+using TextSpace.Preprocessing  # Import all preprocessing functionality
+
 
 
 
