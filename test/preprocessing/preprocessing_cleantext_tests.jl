@@ -1,7 +1,14 @@
-include(joinpath(@__DIR__, "..", "..", "src", "preprocessing", "CleanText.jl"))
-
-using Random, Unicode
-
+using Test
+using Unicode
+using Random
+using TextSpace.Preprocessing: 
+    remove_punctuation,
+    normalize_unicode,
+    normalize_whitespace,
+    remove_emojis,
+    remove_accents,
+    clean_text,
+    strip_zero_width
 
 @testset "remove_punctuation" begin
     txt = "Hello, world! (yes) - test."
