@@ -1,4 +1,8 @@
-include(joinpath(@__DIR__, "..", "..", "src", "preprocessing", "SentenceProcessing.jl"))
+using Test
+using TextSpace.Preprocessing:
+    split_sentences,
+    strip_outer_quotes,
+    SlidingSentenceWindow
 
 
 @testset "split_sentences" begin
