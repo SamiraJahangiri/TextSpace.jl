@@ -1,6 +1,15 @@
-include(joinpath(@__DIR__, "..", "..", "src", "preprocessing", "ParagraphProcessing.jl"))
+using Test
+using TextSpace.Preprocessing:
+    unwrap_lines,
+    split_paragraphs,
+    drop_empty_paragraph,
+    merge_short_paragraphs,
+    paragraph_windows,
+    _is_blank_paragraph,
+    filter_paragraphs
 
 const PP = TextSpace.Preprocessing
+
 
 
 @testset "unwrap_lines" begin
